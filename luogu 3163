@@ -1,0 +1,119 @@
+#include<algorithm>
+#include<iostream>
+#include<cstring>
+#include<cstdio>
+#include<cmath>
+#include<queue>
+using namespace std;
+#define maxn 200005
+#define inf 1<<30
+int n,m,src,decc,head[maxn],lev[maxn],cur[maxn],tot=1,a1,a2,an,b1,b2,bn,ans1,ans2;
+char s[51][51];
+queue<int>que;
+struct Edge{
+    int to,nxt,dis;
+}e[maxn<<1];
+inline void read(int &now)
+{
+    char ch=getchar(); now=0; int f=1;
+    while(ch>'9'||ch<'0') { if(ch=='-') f*=-1; ch=getchar(); }
+    while(ch>='0'&&ch<='9') now=now*10+ch-'0',ch=getchar(); now*=f;
+}
+
+inline void add(int u,int v,int d)
+{
+    e[++tot].to=v; e[tot].nxt=head[u]; e[tot].dis=d; head[u]=tot;
+    e[++tot].to=u; e[tot].nxt=head[v]; e[tot].dis=0; head[v]=tot;
+}
+
+bool bfs()
+{
+    while(!que.empty()) que.pop();
+    for(int i=src;i<=decc;i++) lev[i]=-1,cur[i]=head[i];
+    que.push(src); lev[src]=0;
+    while(!que.empty())
+    {
+        int u=que.front(); que.pop();
+        for(int i=head[u];i;i=e[i].nxt)
+        {
+            int v=e[i].to;
+            if(e[i].dis>0&&lev[v]==-1)
+            {
+                lev[v]=lev[u]+1;
+                que.push(v);
+                if(v==decc) return true;
+            }
+        }
+    }
+    return false;
+}
+
+int dinic(int u,int flow)
+{
+    if(u==decc) return flow;
+    int res=0,delta;
+    for(int &i=cur[u];i;i=e[i].nxt)
+    {
+        if(e[i].dis>0&&lev[e[i].to]==lev[u]+1)
+        {
+            delta=dinic(e[i].to,min(e[i].dis,flow-res));
+            if(delta)
+            {
+                e[i].dis-=delta;
+                e[i^1].dis+=delta;
+                res+=delta;
+                if(res==flow) break;
+            }
+        }
+    }
+    if(res!=flow) lev[u]=-1;
+    return res;
+}
+
+int main()
+{
+    while(scanf("%d",&n)!=EOF)
+    {
+        memset(head,0,sizeof(head)); src=0,decc=n+1; tot=1; ans1=0; ans2=0;
+        read(a1); read(a2); read(an);
+        read(b1); read(b2); read(bn);
+        a1++; a2++; b1++; b2++;
+        for(int i=1;i<=n;i++) scanf("%s",s[i]+1);
+        for(int i=1;i<=n;i++)
+        {
+            for(int j=1;j<=n;j++)
+            {    
+                if(i!=j)
+                {
+                    if(s[i][j]=='X') continue ;
+                    if(s[i][j]=='O') add(i,j,2);
+                    if(s[i][j]=='N') add(i,j,inf);
+                }
+            }
+        }
+        add(src,a1,an*2); add(src,b1,bn*2);
+        add(a2,decc,an*2); add(b2,decc,bn*2);
+        while(bfs())
+            ans1+=dinic(src,inf);
+        memset(head,0,sizeof(head)); src=0,decc=n+1; tot=1;
+        for(int i=1;i<=n;i++)
+        {
+            for(int j=1;j<=n;j++)
+            {
+                if(i!=j)
+                {
+                    if(s[i][j]=='X') continue ;
+                    if(s[i][j]=='O') add(i,j,2);
+                    if(s[i][j]=='N') add(i,j,inf);
+                }
+            }
+        }
+        add(src,a1,an*2); add(src,b2,bn*2);
+        add(a2,decc,an*2); add(b1,decc,bn*2);
+        while(bfs())
+            ans2+=dinic(src,inf);
+        if(ans1<2*(an+bn)||ans2<2*(an+bn)) printf("No\n");
+        else printf("Yes\n");
+    }
+    return 0;
+}
